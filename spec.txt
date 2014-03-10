@@ -1,0 +1,155 @@
+User
+----
+1. User connects to application
+2. User is registered as client
+3. When user disconnects, client should be unregistered
+
+Camera
+-----
+1. User 1 requests camera feed
+2. Camera feed route checks to see if connection is active
+	a. If feed is active, add user to client list
+	b. If not active 
+		- Framerate should be 1
+		- open feed, and create repository
+		- Subscribe user to repo
+3. When user disconnects, remove from client list
+4. When camera repo is disconnected:
+	a. Remove clients.
+	b. Remove repo. 
+
+Controls
+--------
+1. User submits camera action request 
+2. Check to see if user is subscribed to camera
+	a. If subscribed, submit request over HTTP
+		- If success
+			* Update position in database
+			* respond with success
+		- If error respond with error
+	b. If not subscribed, respond with error
+
+
+Classes
+=======
+
+MjpegFeed
+-----
+
+	@interface
+		- (EventEmitter) request()
+
+	@implementation
+		- (Feed) constructor(access, framerate) 
+			@url = access.getUrl()
+			@path = access.getPath(framerate)
+			
+		- (String)       parse(str)
+			new Buffer from string
+			return str
+	
+		- (EventEmitter) request()
+			create proxy with
+				@url
+				@path
+
+			when proxy emits 'data'
+				emit parse(data)
+			
+			when proxy emits 'close'
+				emit 'close'
+
+Client
+------------
+
+	@interface
+		- (Client) sendCommand(command)
+		- (Camera) requestFeed(camera)
+		- (null)   destroy() 
+
+	@implementation
+		- (Client) requestFeed(Camera)
+			add Camera to @connections
+
+			if this not in camera.clients
+				camera.addClient(this)
+
+			return this
+
+		- (Client) sendCommand(Camera, command)
+			if this is in Camera.clients
+				Camera.set(command.action, command.value)
+
+			return this	
+
+		- (null) destroy()
+			foreach @connections
+				remove client at index of conneciton.clients
+
+			unset @connections
+
+Camera
+------
+
+	@interface
+		- (Promise)  getStatus()
+		- (null)    listen(feed)
+		- (Camera)  set(attr, value)
+		- (Camera)  addClient()
+
+	@implementation
+		- (null)   construct(name, CameraAccess, DB)
+			@access    = new CameraAccess with name
+			@db        = new DB with name
+			@clients   = []
+			@currentFr = 1
+
+		- (Promise) getStatus(resolve)
+			fetch from db then respond to resolve 
+
+			return promise
+
+		- (null) listen()
+			on @feed 'packet'
+				send packet to each @client
+			
+			on @feed 'close'
+				@close()
+		
+		- (Camera) close()
+			set @clients to []
+			set @active to false
+
+		- (Camera) set(attr, value)
+			@access.command(attr, value)
+				then
+					@attributes[attr] = value
+					@db.save(@id, @attributes)		
+					resolve promise
+	
+			return promise
+
+		- (Camera) requestWithFramerate(fr)
+			if fr < @currentFr AND @active return
+				off @feed
+				@feed = @access.feed and fr 
+				@listen
+
+		- (Camera) addClient(client)
+			add client to @clients
+
+			return this
+
+		- (Camera) removeClient(client)
+			remove client from @clients
+
+			reuturn this
+
+WebsocketResponse
+-----------------
+1. Format
+	{
+		"framerate": INTEGER,
+		"feed": STRING,
+		"packet": STRING
+	}
