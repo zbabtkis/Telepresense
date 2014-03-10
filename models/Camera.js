@@ -1,9 +1,32 @@
+/**
+ * Telepresence Cameras
+ *
+ * Acts as intermediary between Clients and Feeds
+ *-----------------------------------------------
+ *
+ * @author   Zachary Babtkis <zackbabtkis@gmail.com>
+ * @license  MIT
+ * @package  NEES
+ *
+ */
+
 var Q = require('q');
 
-var _proto_ = { getStatus: function() {
+// Prototype of Camera class
+var _proto_ = { 
+
+	/**
+	 * Getter for all current camera position values
+	 * 
+	 * @return {Object} position values
+	 */
+	getStatus: function() {
 		return this.store.fetch()
 	},
 
+	/**
+	 * Subscribe to feed events.
+	 */
 	listen: function() {
 		if(!this.feed) {
 			logger.warn('Feed not set on ' + this.id);
@@ -11,20 +34,28 @@ var _proto_ = { getStatus: function() {
 		}
 
 		// When image data comes from feed, send to clients.
-		this.feed.on('packet', function(data) {
-			this.clients.forEach(function(client) {
-				client.writeData(data);
-			});
-		}.bind(this));
+		this.feed.on('packet', this._sendPacket.bind(this));
 
 		// When feed ends, teardown camera client interaction.
-		this.feed.on('close', function() {
-			this.close();
-		}.bind(this));
+		this.feed.on('close', this.close.bind(this));
 
 		return this;
 	},
 
+	/**
+	 * Send a packet to all connected clients
+	 *
+	 * @param {String} packet - packet string to send to client
+	 */
+	_sendPacket: function(packet) {
+		this.clients.forEach(function(client) {
+			client.writeData(packet);
+		});
+	},
+
+	/**
+	 * Teardown for when feed ends.
+	 */
 	close: function() {
 
 		// When camera connection closes, empty client array
@@ -34,6 +65,9 @@ var _proto_ = { getStatus: function() {
 		return this;
 	},
 
+	/**
+	 * Destroy this camera and stop proxying
+	 */
 	destroy: function() {
 
 		// Unsubscribe all attached clients
@@ -43,6 +77,15 @@ var _proto_ = { getStatus: function() {
 		this.close();
 	},
 
+	/**
+	 * Camera position/attribute setter
+	 * Sends commands to Access interface to control camera
+	 *
+	 * @param {string} attr - name of attribute to change or control
+	 * @param {String|Number} value - value to set and control camera with
+	 *
+	 * @return {Promise} for when command completes successfully or fails.
+	 */
 	set: function(attr, value) {
 		var d     = Q.defer()
 		  , _this = this;
@@ -111,6 +154,11 @@ var _proto_ = { getStatus: function() {
 		return this;
 	},
 
+	/**
+	 * Remove client from client list
+	 *
+	 * @param {Client} client - client to remove from list
+	 */
 	removeClient: function(client) {
 		var pos = this.clients.indexOf(client);
 		this.clients.splice(pos, 1);
