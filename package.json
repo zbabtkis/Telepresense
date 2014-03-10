@@ -23,6 +23,9 @@
     "winston": "^0.7.2",
     "q": "^1.0.0"
   },
+  "scripts": {
+	  "test": "mocha --reporter spec"
+  },
   "devDependencies": {
     "supertest": "latest",
     "should": "latest",

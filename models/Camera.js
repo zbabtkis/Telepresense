@@ -11,9 +11,9 @@ var _proto_ = { getStatus: function() {
 		}
 
 		// When image data comes from feed, send to clients.
-		this.feed.on('data', function(data) {
+		this.feed.on('packet', function(data) {
 			this.clients.forEach(function(client) {
-				client.readData(data);
+				client.writeData(data);
 			});
 		}.bind(this));
 
