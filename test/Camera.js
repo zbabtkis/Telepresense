@@ -8,18 +8,21 @@ describe("Camera", function() {
 
 	// Fixture that resembles Access interface
 	var CameraAccess = function(name) {
-		var emitter = new Emitter
-		  , frames  = 0;
+		var emitter = new Emitter;
 
-		var interval = setInterval(function() {
-			frames++;
-			emitter.emit('packet');
+		emitter.play = function(fr) {
+			var frames = 0;
 
-			if(frames === 10) {
-				clearInterval(interval);
-				emitter.emit('close');
-			}
-		}, 1000);
+			var interval = setInterval(function() {
+				frames++;
+				emitter.emit('packet');
+
+				if(frames === 10) {
+					clearInterval(interval);
+					emitter.emit('close');
+				}
+			}, 1000/fr);
+		};
 		
 		return {
 			feed: function() {
@@ -71,6 +74,15 @@ describe("Camera", function() {
 	});
 
 	it("Should start with no clients", function() {
+		expect(camera.clients.length).to.equal(0);
+	});
+
+	it("Should be able to add and remove client", function() {
+		var client = {};
+
+		camera.addClient(client);
+		expect(camera.clients.length).to.equal(1);
+		camera.removeClient(client);
 		expect(camera.clients.length).to.equal(0);
 	});
 

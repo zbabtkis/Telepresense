@@ -131,9 +131,12 @@ Camera
 
 		- (Camera) requestWithFramerate(fr)
 			if fr < @currentFr AND @active return
-				off @feed
-				@feed = @access.feed and fr 
-				@listen
+
+			off @feed
+			feed.play with fr
+			@listen
+
+			return this
 
 		- (Camera) addClient(client)
 			add client to @clients

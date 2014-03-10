@@ -67,17 +67,27 @@ var _proto_ = { getStatus: function() {
 					});
 			});
 
-			return d.promise;
+		return d.promise;
 	},
 
+	/** 
+	 * Create new feed subscription with new framerate
+	 *
+	 * @param {Number} fr - Framerate to use in new feed.
+	 */
 	requestWithFramerate: function(fr) {
 
+		// We shouldn't downgrade framerate if higher has been requested
+		if(this.currentFr > fr) return this;
+
+		this.currentFr = fr;
+
 		// Turn off old feed.
-		this.feed.off('data');
-		this.feed.off('close');
+		this.feed.removeAllListeners('packet');
+		this.feed.removeAllListeners('close');
 
 		// Create new feed with new framerate.
-		this.feed = new Feed(this.access.feed, fr);
+		this.feed.play(fr);
 
 		// Rebind feed events for all clients.
 		this.listen();
@@ -126,6 +136,7 @@ var Cameras = {
 
 			// Build access feed from camera ID
 			this.access = new Access(id);
+			this.feed   = this.access.feed();
 
 			// Use or create store in DB.
 			this.store = new Db(id);
