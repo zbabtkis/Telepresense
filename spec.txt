@@ -17,6 +17,7 @@ Camera
 4. When camera repo is disconnected:
 	a. Remove clients.
 	b. Remove repo. 
+	c. Remove camera connection from previously connected clients.
 
 Controls
 --------
