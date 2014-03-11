@@ -10,7 +10,12 @@
  *
  */
 
-var Q = require('q');
+var Q = require('q')
+  , logger = require('winston');
+
+// Just log everything to debug.log
+logger.add(logger.transports.File, {filename: "debug.camera.log"});
+logger.remove(logger.transports.Console);
 
 // Prototype of Camera class
 var _proto_ = { 
@@ -34,10 +39,16 @@ var _proto_ = {
 		}
 
 		// When image data comes from feed, send to clients.
-		this.feed.on('packet', this._sendPacket.bind(this));
+		this.feed.subscribe(
+			this.feed.events.PACKET, 
+			this._sendPacket.bind(this)
+		);
 
 		// When feed ends, teardown camera client interaction.
-		this.feed.on('close', this.close.bind(this));
+		this.feed.subscribe(
+			this.feed.events.CLOSE, 
+			this.close.bind(this)
+		);
 
 		return this;
 	},
@@ -126,8 +137,8 @@ var _proto_ = {
 		this.currentFr = fr;
 
 		// Turn off old feed.
-		this.feed.removeAllListeners('packet');
-		this.feed.removeAllListeners('close');
+		this.feed.unsubscribe(this.feed.events.PACKET);
+		this.feed.unsubscribe(this.feed.events.CLOSE);
 
 		// Create new feed with new framerate.
 		this.feed.play(fr);

@@ -29,7 +29,6 @@ Controls
 		- If error respond with error
 	b. If not subscribed, respond with error
 
-
 Classes
 =======
 
